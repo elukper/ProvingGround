@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping package="org.hibernate.tutorial.domain">
+
+<class name="RBSInfo" table="rbsinfo">
+		<id name="rbsName" column="RBSName">
+            <generator class="native"/>
+        </id>
+		 <property name="siuUsed" column="SIU/TCU"/>
+		 <property name="siuLayer3" column="SIU_Layer3"/>
+		 <property name="iubUsed" column="Iub"/>
+		 <property name="abisUsed" column="AbisVLAN"/>
+		 <property name="s1Used" column="S1"/>
+    </class>
+
+</hibernate-mapping>
