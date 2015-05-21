@@ -127,7 +127,13 @@ public class DatabaseUtil {
 			subnetData.setSubnet(workbook.getSheet(DatabaseUtil.IMPORT_WB_SHEET_DATA).getRow(i).getCell(DatabaseUtil.SUBNET_EXCEL_COLUMN).getStringCellValue());
 			//System.out.println(subnetData.getVID()+"   "+subnetData.getSubnet());
 			getSession().save(subnetData);
-			getSession().flush();
+			try { 
+				getSession().flush();
+				} catch (org.hibernate.exception.ConstraintViolationException e) {
+					getSession().clear();
+					getSession().update(subnetData);
+					getSession().flush();
+				}
 			getSession().clear();
 			i++;
 				}
@@ -148,7 +154,7 @@ public class DatabaseUtil {
 
 		QueryBuilder qb = fullTextSession.getSearchFactory().buildQueryBuilder().forEntity(SubnetData.class).get();
 		
-		org.apache.lucene.search.Query query = qb.keyword().onField(DatabaseUtil.SUBNETDATA_SQL_VID).matching("106").createQuery();
+		org.apache.lucene.search.Query query = qb.keyword().onField(DatabaseUtil.SUBNETDATA_SQL_VID).matching("*").createQuery();
 		
 		// wrap Lucene query in a org.hibernate.Query
 		org.hibernate.Query hibQuery =

@@ -64,7 +64,7 @@ public class TestEnv extends Thread{
 		
 		List<SubnetData> subnetData = DatabaseUtil.getDataFromSubnetDataTable();
 		
-		System.out.println("From Database"+subnetData.get(0).getVID() + "  " + subnetData.get(0).getSubnet());
+		System.out.println("From Database: "+subnetData.get(0).getVID() + "  " + subnetData.get(0).getSubnet());
 		
 		DatabaseUtil.closeSessions();
 		
