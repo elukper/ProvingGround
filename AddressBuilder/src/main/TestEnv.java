@@ -58,13 +58,21 @@ public class TestEnv extends Thread{
 		if(workbookinput != null)
 		DatabaseUtil.populateDBTable(DatabaseUtil.SUBNETDATA_SQL_TABLENAME, workbookinput);
 		
+		//DatabaseUtil.populateDBTable(DatabaseUtil.RBSDATA_SQL_TABLENAME, workbookinput);
+		
 		//DatabaseUtil.closeSessions();
 		
 		//DatabaseUtil.openSessions("AddressStorage");
 		
-		List<SubnetData> subnetData = DatabaseUtil.getDataFromSubnetDataTable();
+		List<SubnetData> subnetData = DatabaseUtil.getDataFromSubnetDataTable(DatabaseUtil.SUBNETDATA_SQL_SUBNET, "192.168.12.0/24");
 		
-		System.out.println("From Database: "+subnetData.get(0).getVID() + "  " + subnetData.get(0).getSubnet());
+		for (int i=0; i<subnetData.size(); i++)
+		System.out.println("From Database: "+subnetData.get(i).getVID() + "  " + subnetData.get(i).getSubnet());
+		
+		List<RBSData> rbsData = DatabaseUtil.getDataFromRBSDataTable(DatabaseUtil.RBSDATA_SQL_RBSNAME_COLUMN, "PRIJEKO_BRDO");
+		
+		for (int i=0; i<subnetData.size(); i++)
+		System.out.println("From Database: "+subnetData.get(i).getVID() + "  " + subnetData.get(i).getSubnet());
 		
 		DatabaseUtil.closeSessions();
 		

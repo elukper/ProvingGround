@@ -1,10 +1,17 @@
 package main;
 
+import java.lang.reflect.Array;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+
+import org.hibernate.search.annotations.Analyze;
+import org.hibernate.search.annotations.Field;
+import org.hibernate.search.annotations.Index;
+import org.hibernate.search.annotations.Store;
 
 
 
@@ -18,11 +25,13 @@ public class RBSData {
 		this.rbsName = rbsName;
 	}
 	
-	
+	public RBSData(){
+		
+	}
 	
 	public RBSData(String rbsName, int iubVID, int s1vid, int omVID,
 			int abisVID, String tcuSIU, int tnAbisVID, int tnIubVID,
-			int tnS1VID, int tnOMVID, boolean siuLayer3Used) {
+			int tnS1VID, int tnOMVID) {
 		super();
 		this.rbsName = rbsName;
 		this.iubVID = iubVID;
@@ -34,11 +43,10 @@ public class RBSData {
 		this.tnIubVID = tnIubVID;
 		this.tnS1VID = tnS1VID;
 		this.tnOMVID = tnOMVID;
-		this.siuLayer3Used = siuLayer3Used;
 	}
 
 	public RBSData(String rbsName, int iubVID, int s1vid, int omVID,
-			int abisVID, String tcuSIU, boolean siuLayer3Used, String peDevice) {
+			int abisVID, String tcuSIU, String peDevice) {
 		super();
 		this.rbsName = rbsName;
 		this.iubVID = iubVID;
@@ -46,7 +54,6 @@ public class RBSData {
 		this.omVID = omVID;
 		this.abisVID = abisVID;
 		this.tcuSIU = tcuSIU;
-		this.siuLayer3Used = siuLayer3Used;
 		this.peDevice = peDevice;
 	}
 
@@ -55,7 +62,7 @@ public class RBSData {
 
 
 	private String rbsName;
-
+	
 	private int iubVID;
 	private int s1VID;
 	private int omVID;
@@ -67,8 +74,6 @@ public class RBSData {
 	private int tnIubVID;
 	private int tnS1VID;
 	private int tnOMVID;
-	
-	private boolean siuLayer3Used;
 	
 	private String peDevice;
 	
@@ -83,6 +88,7 @@ public class RBSData {
 	}
 	
 	@Column(name=DatabaseUtil.RBSDATA_SQL_IUB_VID_COLUMN)
+	@Field(index=Index.YES, analyze=Analyze.YES, store=Store.NO)
 	public int getIubVID() {
 		return iubVID;
 	}
@@ -92,6 +98,7 @@ public class RBSData {
 	}
 
 	@Column(name=DatabaseUtil.RBSDATA_SQL_S1_VID_COLUMN)
+	@Field(index=Index.YES, analyze=Analyze.YES, store=Store.NO)
 	public int getS1VID() {
 		return s1VID;
 	}
@@ -101,6 +108,7 @@ public class RBSData {
 	}
 
 	@Column(name=DatabaseUtil.RBSDATA_SQL_OM_VID_COLUMN)
+	@Field(index=Index.YES, analyze=Analyze.YES, store=Store.NO)
 	public int getOmVID() {
 		return omVID;
 	}
@@ -110,6 +118,7 @@ public class RBSData {
 	}
 
 	@Column(name=DatabaseUtil.RBSDATA_SQL_ABIS_VID_COLUMN)
+	@Field(index=Index.YES, analyze=Analyze.YES, store=Store.NO)
 	public int getAbisVID() {
 		return abisVID;
 	}
@@ -119,6 +128,7 @@ public class RBSData {
 	}
 
 	@Column(name=DatabaseUtil.RBSDATA_SQL_SIU_TCU_COLUMN)
+	@Field(index=Index.YES, analyze=Analyze.YES, store=Store.NO)
 	public String getTcuSIU() {
 		return tcuSIU;
 	}
@@ -128,6 +138,7 @@ public class RBSData {
 	}
 
 	@Column(name=DatabaseUtil.RBSDATA_SQL_TN_ABIS_VID_COLUMN)
+	@Field(index=Index.YES, analyze=Analyze.YES, store=Store.NO)
 	public int getTnAbisVID() {
 		return tnAbisVID;
 	}
@@ -137,6 +148,7 @@ public class RBSData {
 	}
 
 	@Column(name=DatabaseUtil.RBSDATA_SQL_TN_IUB_VID_COLUMN)
+	@Field(index=Index.YES, analyze=Analyze.YES, store=Store.NO)
 	public int getTnIubVID() {
 		return tnIubVID;
 	}
@@ -146,6 +158,7 @@ public class RBSData {
 	}
 
 	@Column(name=DatabaseUtil.RBSDATA_SQL_TN_S1_VID_COLUMN)
+	@Field(index=Index.YES, analyze=Analyze.YES, store=Store.NO)
 	public int getTnS1VID() {
 		return tnS1VID;
 	}
@@ -155,6 +168,7 @@ public class RBSData {
 	}
 
 	@Column(name=DatabaseUtil.RBSDATA_SQL_TN_OM_VID_COLUMN)
+	@Field(index=Index.YES, analyze=Analyze.YES, store=Store.NO)
 	public int getTnOMVID() {
 		return tnOMVID;
 	}
@@ -163,17 +177,9 @@ public class RBSData {
 		this.tnOMVID = tnOMVID;
 	}
 
-	@Column(name=DatabaseUtil.RBSDATA_SQL_SIU_LAYER3_COLUMN)
-	public boolean isSiuLayer3Used() {
-		return siuLayer3Used;
-	}
-
-	public void setSiuLayer3Used(boolean siuLayer3Used) {
-		this.siuLayer3Used = siuLayer3Used;
-	}
-
-
+	
 	@Column(name=DatabaseUtil.RBSDATA_SQL_PE_DEVICE)
+	@Field(index=Index.YES, analyze=Analyze.YES, store=Store.NO)
 	public String getPeDevice() {
 		return peDevice;
 	}
