@@ -84,59 +84,10 @@ public final class DatabaseUtilityMySQL {
 	public static final String SUBNETDATA_SQL_VID = "VID";
 	public static final String SUBNETDATA_SQL_SUBNET = "Subnet";
 	
-	private static final String MYSQL_NETWORK_ADDRESS = "127.0.0.1:3306";
-	private static final String MYSQL_USERNAME = "root";
-	private static final String MYSQL_PASSWORD = "Vegas123";
-	
-	//Static Variables:
-	private static SessionFactory sessionFactory;
-	private static Session session;
-	private static Configuration configuration;	
-	private static String configOpenForDatabase;
-	
-	
-	
-	
-	//Getters and setters:
-	private static Session getSession() {
-		return session;
-	}
-
-	private static void setSession(Session session) {
-		DatabaseUtilityMySQL.session = session;
-	}
-
-	private static SessionFactory getSessionFactory() {
-		return sessionFactory;
-	}
-
-	private static void setSessionFactory(SessionFactory sessions) {
-		DatabaseUtilityMySQL.sessionFactory = sessions;
-	}
-	
-	private static String getConfigSetForDatabase() {
-		return configOpenForDatabase;
-	}
-
-	private static void setConfigOpenForDatabase(String configOpenForDatabase) {
-		DatabaseUtilityMySQL.configOpenForDatabase = configOpenForDatabase;
-	}
-
-	private static Configuration getConfiguration() {
-		return configuration;
-	}
-
-	private static void setConfiguration(Configuration configuration) {
-		DatabaseUtilityMySQL.configuration = configuration;
-	}
-
 	
 	
 	//Methods:
-	public static void updateRBSDatabaseTable (String table, RBSSubnetData rbsSubnetData){
-		//TODO: Throw exception if getSessionFactory()==null;
-		setSession(getSessionFactory().openSession());
-		Transaction tx = getSession().beginTransaction();
+	public static void updateRBSDatabaseTable (String table, RBSSubnetData rbsSubnetData, Session session){
 		
 		RBSSubnetData newRbsSubnetData = null;
 		
@@ -153,43 +104,29 @@ public final class DatabaseUtilityMySQL {
 		}
 		
 		if (newRbsSubnetData != null){
-		getSession().save(newRbsSubnetData); 
-		try { 
-			getSession().flush();
-			} catch (org.hibernate.exception.ConstraintViolationException e) {
-				getSession().clear();
-				getSession().update(newRbsSubnetData);
-				getSession().flush();
-			}
-		
-		getSession().clear();
-		
-		tx.commit();
-	
-		getSession().close();
+			writeDataToSQLTableSessionIncluded(newRbsSubnetData, session);
 		
 		}
 		
 	}
 	
 	//Populate Subnet or RBS Database Table, based on "table" keyword (name of the table)
-	public static void populateDBTable(String table, Workbook workbook){		
+	public static void populateDBTable(String table, Workbook workbook, Session session){		
 		
 		switch (table) {
-		case DatabaseUtilityMySQL.SUBNETDATA_SQL_TABLENAME: populateSubnetDataTable(workbook); break;
-		case DatabaseUtilityMySQL.RBSDATA_SQL_TABLENAME: populateRBSDataTable(workbook); break;
+		case DatabaseUtilityMySQL.SUBNETDATA_SQL_TABLENAME: populateSubnetDataTable(workbook, session); break;
+		case DatabaseUtilityMySQL.RBSDATA_SQL_TABLENAME: populateRBSDataTable(workbook, session); break;
 		default: break;
 		}
 		
 	}
 	
-	private static void populateSubnetDataTable(Workbook workbook){
+	private static void populateSubnetDataTable(Workbook workbook, Session session){
 		//TODO: Throw exception if getSessionFactory()==null;
-		setSession(getSessionFactory().openSession());
 		
 		int rowCounter = DatabaseUtilityMySQL.START_ROW_SUBNETS_SHEET;
 		
-		Transaction tx = getSession().beginTransaction();
+		Transaction tx = session.beginTransaction();
 		
 		SubnetData subnetData = new SubnetData();
 		
@@ -199,18 +136,18 @@ public final class DatabaseUtilityMySQL {
 			subnetData.setVID(getIntCellFromExcelWorksheet(workbook, DatabaseUtilityMySQL.EXCEL_IMPORT_SUBNETS_SHEET_DATA, DatabaseUtilityMySQL.VLAN_ID_EXCEL_COLUMN, rowCounter));
 			subnetData.setSubnet(getStringCellFromExcelWorksheet(workbook, DatabaseUtilityMySQL.EXCEL_IMPORT_SUBNETS_SHEET_DATA, DatabaseUtilityMySQL.SUBNET_EXCEL_COLUMN, rowCounter));
 			
-			writeDataToSQLTable(subnetData);
+			writeDataToSQLTableSessionExcluded(subnetData, session);
 			rowCounter++;
 				}}
 		
 		//Catch NullPointer when rowCount reaches Null value row
 		catch (java.lang.NullPointerException e){
-			getSession().close();
+			session.close();
 		}
 		
 		tx.commit();
-		if(getSession().isOpen()==true)
-			getSession().close();
+		if(session.isOpen()==true)
+			session.close();
 		
 		 }
 	
@@ -227,13 +164,12 @@ public final class DatabaseUtilityMySQL {
 		return (int)workbook.getSheet(worksheet).getRow(row).getCell(column).getNumericCellValue();
 	}
 	
-	private static void populateRBSDataTable(Workbook workbook) {
+	private static void populateRBSDataTable(Workbook workbook, Session session) {
 		//TODO: Throw exception if getSessionFactory()==null;
-		setSession(getSessionFactory().openSession());
 		
 		int rowCounter = DatabaseUtilityMySQL.START_ROW_RBS_DATA_SHEET;
 		
-		Transaction tx = getSession().beginTransaction();
+		Transaction tx = session.beginTransaction();
 		
 		RBSData rbsData = new RBSData();
 		
@@ -262,61 +198,28 @@ public final class DatabaseUtilityMySQL {
 			
 			rbsData.setTnAbisVID(getIntCellFromExcelWorksheet(workbook, DatabaseUtilityMySQL.EXCEL_IMPORT_RBS_NODES_SHEET_DATA, DatabaseUtilityMySQL.TN_ABIS_EXCEL_COLUMN, rowCounter));
 			
-			writeDataToSQLTable(rbsData);
+			writeDataToSQLTableSessionExcluded(rbsData, session);
 			rowCounter++;
 			
 		}}
 		//Catch NullPointer when rowCount reaches Null value row
 		catch (java.lang.NullPointerException e){
-			getSession().close(); 
+			session.close(); 
 			}
 		
 		tx.commit();
-		if(getSession().isOpen()==true)
-			getSession().close();
+		if(session.isOpen()==true)
+			session.close();
 	}
-	
-	
-	private static void initializeHibernateConfiguration(String database){
-		
-		if(getConfiguration()==null || !(database.equals(getConfigSetForDatabase()))){
-			
-		setConfiguration(new Configuration());
-		setConfigOpenForDatabase(database);
-		
-		getConfiguration().setProperty("hibernate.connection.driver_class", "com.mysql.jdbc.Driver");
-		getConfiguration().setProperty("hibernate.connection.url","jdbc:mysql://" + DatabaseUtilityMySQL.MYSQL_NETWORK_ADDRESS + "/" + database);
-		getConfiguration().setProperty("hibernate.connection.username", DatabaseUtilityMySQL.MYSQL_USERNAME);
-		getConfiguration().setProperty("hibernate.connection.password", DatabaseUtilityMySQL.MYSQL_PASSWORD);
-		getConfiguration().setProperty("hibernate.c3p0.min_siz", "5");
-		getConfiguration().setProperty("hibernate.c3p0.max_size", "20");
-		getConfiguration().setProperty("hibernate.c3p0.timeout", "1800");
-		getConfiguration().setProperty("hibernate.c3p0.max_statements", "50");
-		getConfiguration().setProperty("connection.pool_size", "10");
-		getConfiguration().setProperty("hibernate.dialect", "org.hibernate.dialect.MySQLInnoDBDialect");
-		getConfiguration().setProperty("hibernate.search.default.directory_provider", "filesystem");
-		getConfiguration().setProperty("hibernate.search.default.indexBase", "/var/lucene/indexes");
-		getConfiguration().addAnnotatedClass(RBSData.class);
-		getConfiguration().addAnnotatedClass(SubnetData.class);
-		getConfiguration().addAnnotatedClass(RBSSubnetDataIub.class);
-		getConfiguration().addAnnotatedClass(RBSSubnetDataAbis.class);
-		getConfiguration().addAnnotatedClass(RBSSubnetDataOM.class);
-		getConfiguration().addAnnotatedClass(RBSSubnetDataS1.class);
-		getConfiguration().addAnnotatedClass(RBSSubnetData.class);
-		}
-		
-		
-	}
+
 	
 	//Returns list of SubnetData classes that 'match' data in a 'column'	
 	
-	public static List<SubnetData> getDataFromSubnetDataTable(String column, String data){
+	public static List<SubnetData> getDataFromSubnetDataTable(String column, String data, Session session){
 		
-		setSession(getSessionFactory().openSession());
+		List<SubnetData> subnetList = session.createSQLQuery("SELECT * FROM "+DatabaseUtilityMySQL.SUBNETDATA_SQL_TABLENAME+" WHERE "+column+" = '"+data+"'").setResultTransformer(Transformers.aliasToBean(SubnetData.class)).list();
 		
-		List<SubnetData> subnetList = getSession().createSQLQuery("SELECT * FROM "+DatabaseUtilityMySQL.SUBNETDATA_SQL_TABLENAME+" WHERE "+column+" = '"+data+"'").setResultTransformer(Transformers.aliasToBean(SubnetData.class)).list();
-		
-		getSession().close();
+		session.close();
 		
 		return subnetList;
 		
@@ -324,13 +227,11 @@ public final class DatabaseUtilityMySQL {
 	
 	//Returns list of all SubnetData classes
 	
-	public static List<SubnetData> getAllDataFromSubnetDataTableOrderBy() {
+	public static List<SubnetData> getAllDataFromSubnetDataTableOrderBy(Session session) {
 		
-		setSession(getSessionFactory().openSession());
+		List<SubnetData> subnetList = session.createSQLQuery("SELECT * FROM "+DatabaseUtilityMySQL.SUBNETDATA_SQL_TABLENAME).setResultTransformer(Transformers.aliasToBean(SubnetData.class)).list();
 		
-		List<SubnetData> subnetList = getSession().createSQLQuery("SELECT * FROM "+DatabaseUtilityMySQL.SUBNETDATA_SQL_TABLENAME).setResultTransformer(Transformers.aliasToBean(SubnetData.class)).list();
-		
-		getSession().close();
+		session.close();
 		
 		return subnetList;
 		
@@ -338,26 +239,22 @@ public final class DatabaseUtilityMySQL {
 	
 	//Returns list of RBSData classes that 'match' data in a 'column'	
 	
-	public static List<RBSData> getDataFromRBSDataTable(String column, String match){
+	public static List<RBSData> getDataFromRBSDataTable(String column, String match, Session session){
 		
-		setSession(getSessionFactory().openSession());
+		List<RBSData> rbsDataList = session.createSQLQuery("SELECT * FROM "+DatabaseUtilityMySQL.RBSDATA_SQL_TABLENAME+" WHERE "+column+" = '"+match+"'").setResultTransformer(Transformers.aliasToBean(RBSData.class)).list();
 		
-		List<RBSData> rbsDataList = getSession().createSQLQuery("SELECT * FROM "+DatabaseUtilityMySQL.RBSDATA_SQL_TABLENAME+" WHERE "+column+" = '"+match+"'").setResultTransformer(Transformers.aliasToBean(RBSData.class)).list();
-		
-		getSession().close();
+		session.close();
 		
 		return rbsDataList;
 		
 	}
 	
 	
-	public static List<RBSData> getAllDataFromRBSDataTableOrderBy(String column) {
+	public static List<RBSData> getAllDataFromRBSDataTableOrderBy(String column, Session session) {
 		
-		setSession(getSessionFactory().openSession());
+		List<RBSData> rbsDataList = session.createSQLQuery("SELECT * FROM "+DatabaseUtilityMySQL.RBSDATA_SQL_TABLENAME+" ORDER BY "+column + "").setResultTransformer(Transformers.aliasToBean(RBSData.class)).list();
 		
-		List<RBSData> rbsDataList = getSession().createSQLQuery("SELECT * FROM "+DatabaseUtilityMySQL.RBSDATA_SQL_TABLENAME+" ORDER BY "+column + "").setResultTransformer(Transformers.aliasToBean(RBSData.class)).list();
-		
-		getSession().close();
+		session.close();
 		
 		return rbsDataList;
 		
@@ -365,70 +262,49 @@ public final class DatabaseUtilityMySQL {
 	
 	
 	//Returns list of RBSSubnetData that 'match' data in 'column' from 'table'.
-	public static List<RBSSubnetData> getDataFromRBSSubnetTable(String table, String column, String match){
+	public static List<RBSSubnetData> getDataFromRBSSubnetTable(String table, String column, String match, Session session){
 		
-		setSession(getSessionFactory().openSession());
+		List<RBSSubnetData> rbsDataList = session.createSQLQuery("SELECT * FROM "+table+" WHERE "+column+" = '"+match+"'").setResultTransformer(Transformers.aliasToBean(RBSSubnetData.class)).list();
 		
-		List<RBSSubnetData> rbsDataList = getSession().createSQLQuery("SELECT * FROM "+table+" WHERE "+column+" = '"+match+"'").setResultTransformer(Transformers.aliasToBean(RBSSubnetData.class)).list();
-		
-		getSession().close();
+		session.close();
 		
 		return rbsDataList;
 		
 	}
-	
 
-	//initialize config and open SessionFactory session
-	public static void openSessions(String database){
-		
-		DatabaseUtilityMySQL.initializeHibernateConfiguration(database);
-		
-		setSessionFactory(getConfiguration().buildSessionFactory());
-		
-		
-	}
-	
-	//close SessionFactory session
-	
-	public static void closeSessions(){
-		
-		getSessionFactory().close();
-		setSessionFactory(null);
-	}
 
-	
-	public static void writeToRBSSubnetTable(String table, RBSSubnetData rbsSubnetData){
-		
-		setSession(getSessionFactory().openSession());
+	//write any object to a table, method handles opening and closing of a session and a transaction (used for a single write to SQL)
+	public static void writeDataToSQLTableSessionIncluded(Object object, Session session){
 			
-		Transaction tx = getSession().beginTransaction();
+		Transaction tx = session.beginTransaction();
 		
-		getSession().save(rbsSubnetData);
+		session.save(object);
 		try{
-		getSession().flush();
+		session.flush();
 		} catch (ConstraintViolationException e) {
-			getSession().clear();
-			getSession().update(rbsSubnetData);
-			getSession().flush();
+			session.clear();
+			session.update(object);
+			session.flush();
 		}
-		getSession().clear();
+		session.clear();
 		tx.commit();
-		getSession().close();
+		session.close();
 		
 		
 	}
 
-	private static void writeDataToSQLTable (Object object) {
+	//write any object to a table, method doesn't handle opening/closing of sessions or transactions (used in loops when writing multiple entries into SQL)
+	private static void writeDataToSQLTableSessionExcluded (Object object, Session session) {
 
-			getSession().save(object);
+			session.save(object);
 			try { 
-				getSession().flush();
+				session.flush();
 				} catch (org.hibernate.exception.ConstraintViolationException e) {
-					getSession().clear();
-					getSession().update(object);
-					getSession().flush();
+					session.clear();
+					session.update(object);
+					session.flush();
 				}
-			getSession().clear();
+			session.clear();
 			
 		}
 	

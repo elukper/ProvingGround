@@ -7,12 +7,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 
+import main.DatabaseBuilders.TableBuilders.BuildNewAddressTable;
 import main.SQLDatabaseClasses.RBSData;
 import main.SQLDatabaseClasses.RBSSubnetDataIub;
 import main.SQLDatabaseClasses.SubnetData;
 import main.SQLDatabaseClasses.Superclasses.RBSSubnetData;
 import main.UtilityClasses.DatabaseUtilityMySQL;
-import main.UtilityClasses.DatabaseUtilityTables;
+import main.UtilityClasses.UtilMySQLConnection;
 
 import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -100,19 +101,20 @@ public class TestEnv extends Thread{
 		
 	/**	System.out.println(IPAddressManipulator.getBroadcastIPAddress("192.168.114.64", 27)); **/
 		
-		DatabaseUtilityMySQL.openSessions("AddressStorage");
+		
+		UtilMySQLConnection newMySQLConnection = new UtilMySQLConnection();
 		
 		if(workbookinput != null){
-		DatabaseUtilityMySQL.populateDBTable(DatabaseUtilityMySQL.SUBNETDATA_SQL_TABLENAME, workbookinput);
+		DatabaseUtilityMySQL.populateDBTable(DatabaseUtilityMySQL.SUBNETDATA_SQL_TABLENAME, workbookinput, newMySQLConnection.getNewSession());
 		
-		DatabaseUtilityMySQL.populateDBTable(DatabaseUtilityMySQL.RBSDATA_SQL_TABLENAME, workbookinput);
+		DatabaseUtilityMySQL.populateDBTable(DatabaseUtilityMySQL.RBSDATA_SQL_TABLENAME, workbookinput, newMySQLConnection.getNewSession());
 		}
 		
 		RBSSubnetData rbsSubnetData = new RBSSubnetData("TEST", "Router", "TEST_VLAN", 105, "192.168.50.1", 24);
 		
-		DatabaseUtilityMySQL.updateRBSDatabaseTable(DatabaseUtilityMySQL.RBSSUBNETDATA_SQL_TABLENAME_IUB, rbsSubnetData);
+		DatabaseUtilityMySQL.updateRBSDatabaseTable(DatabaseUtilityMySQL.RBSSUBNETDATA_SQL_TABLENAME_IUB, rbsSubnetData, newMySQLConnection.getNewSession());
 		
-		List<RBSSubnetData> rbsSList = DatabaseUtilityMySQL.getDataFromRBSSubnetTable(DatabaseUtilityMySQL.RBSSUBNETDATA_SQL_TABLENAME_IUB, "vLAN", "TEST_VLAN");
+		List<RBSSubnetData> rbsSList = DatabaseUtilityMySQL.getDataFromRBSSubnetTable(DatabaseUtilityMySQL.RBSSUBNETDATA_SQL_TABLENAME_IUB, "vLAN", "TEST_VLAN", newMySQLConnection.getNewSession());
 		
 		System.out.println("Output from Iub database: "+rbsSList.get(0).getIpAddress()+" "+rbsSList.get(0).getVLAN()+" "+rbsSList.get(0).getRbsData_rbsName());
 		
@@ -121,12 +123,12 @@ public class TestEnv extends Thread{
 		
 		//DatabaseUtil.openSessions("AddressStorage");
 		
-		List<SubnetData> subnetData = DatabaseUtilityMySQL.getDataFromSubnetDataTable(DatabaseUtilityMySQL.SUBNETDATA_SQL_SUBNET, "192.168.12.0/24");
+		List<SubnetData> subnetData = DatabaseUtilityMySQL.getDataFromSubnetDataTable(DatabaseUtilityMySQL.SUBNETDATA_SQL_SUBNET, "192.168.12.0/24", newMySQLConnection.getNewSession());
 		
 		for (int i=0; i<subnetData.size(); i++)
 		System.out.println("From Database: "+subnetData.get(i).getVID() + "  " + subnetData.get(i).getSubnet());
 		
-		List<RBSData> rbsData = DatabaseUtilityMySQL.getDataFromRBSDataTable(DatabaseUtilityMySQL.RBSDATA_SQL_RBSNAME_COLUMN, "PRIJEKO_BRDO");
+		List<RBSData> rbsData = DatabaseUtilityMySQL.getDataFromRBSDataTable(DatabaseUtilityMySQL.RBSDATA_SQL_RBSNAME_COLUMN, "PRIJEKO_BRDO", newMySQLConnection.getNewSession());
 		
 		for (int i=0; i<rbsData.size(); i++)
 		System.out.println("From Database: "+rbsData.get(i).getRbsName() + "  " + rbsData.get(i).getPeDevice());
@@ -171,11 +173,10 @@ public class TestEnv extends Thread{
 		
 		sessions.close();**/
 		
-		DatabaseUtilityTables databaseUtilityTables = new DatabaseUtilityTables();
+		BuildNewAddressTable databaseUtilityTables = new BuildNewAddressTable();
+		databaseUtilityTables.buildAddressTable(DatabaseUtilityMySQL.RBSSUBNETDATA_SQL_TABLENAME_OM,newMySQLConnection);
 		
-		databaseUtilityTables.createAddressTable(DatabaseUtilityMySQL.RBSSUBNETDATA_SQL_TABLENAME_OM);
-		
-		DatabaseUtilityMySQL.closeSessions();
+		newMySQLConnection.closeSessions();
 
 	}}
 
